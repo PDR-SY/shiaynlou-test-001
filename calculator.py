@@ -35,10 +35,10 @@ class Config(object):
 
 
 def dumptofile(outfile,result):
-	with open(outfile,'a') as file:
-		
-		writer = csv.writer(file)
-		writer.writerows(result)
+	with open(outfile,'a',newline='') as file:
+		file.write(result)
+		#writer = csv.writer(file)
+		#writer.writerows(result)
 
 def calculator(config,user,outfile):
 	str_out = []
@@ -59,11 +59,7 @@ def calculator(config,user,outfile):
 		else:
 			tax = format(getTax(int(value)-float(insurence_money)-3500),'.2f')
 		backmoney = format(int(value)-float(insurence_money)-float(tax),'.2f')
-		str_out.append(key)
-		str_out.append(value)
-		str_out.append(insurence_money)
-		str_out.append(tax)
-		str_out.append(backmoney)
+		str_out = str(key)+','+str(value)+','+str(insurence_money)+','+str(tax)+','+str(backmoney)+'\n'
 		dumptofile(outfile,str_out)
 
 def insurence(money,config):
