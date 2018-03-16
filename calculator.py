@@ -2,46 +2,50 @@
 
 import sys
 import csv
+import multiprocessing import Process,Queue
+from datetime import datetime
+import getopt
 
-
-class UserData(object):
-	def __init__(self,user_file):
-		self.user = self._read_user(user_file)
-	def _read_user(self,user_file):
-		with open(user_file,'r') as file:
-			user = {}
-			for line in file:
-				line = line.strip()
-				key = line.split(',')[0].strip()
-				value = line.split(',')[1]
-				user[key] = value
-			return user
-
-
-class Config(object):
-	def __init__(self,config_file):
-		self.config = self._read_config(config_file)
-	def _read_config(self,config_file):		
-		with open(config_file,'r') as file:
-			config = {}
-			for line in file:
-				line = line.strip()
-				key = line.split("=")[0].strip()
-				value = line.split("=")[1].strip()
-				config[key] = value
-			return config
+queue1 = Queue()
+queue2 = Queue()
+queue3 = Queue()
+def _read_user(user_file,config_file):
+	with open(user_file,'r') as file:
+		user = {}
+		for line in file:
+			line = line.strip()
+			key = line.split(',')[0].strip()
+			value = line.split(',')[1]
+			user[key] = value
+		queue1.put(user)
+		_read_config(config_file)
 
 
 
+def _read_config(config_file):		
+	with open(config_file,'r') as file:
+		config = {}
+		for line in file:
+			line = line.strip()
+			key = line.split("=")[0].strip()
+			value = line.split("=")[1].strip()
+			config[key] = value
+		queue2.put(config)
 
-def dumptofile(outfile,result):
+
+
+
+def dumptofile(outfile):
 	with open(outfile,'a',newline='') as file:
+		result = queue3.get()
 		file.write(result)
 		#writer = csv.writer(file)
 		#writer.writerows(result)
 
-def calculator(config,user,outfile):
-	str_out = []
+def calculator():
+	str_out = ""
+	config = queue2.get()
+	user = queue1.get()
 	for key,value in user.items():
 		
 		insurence_money = 0.00
@@ -59,8 +63,8 @@ def calculator(config,user,outfile):
 		else:
 			tax = format(getTax(int(value)-float(insurence_money)-3500),'.2f')
 		backmoney = format(int(value)-float(insurence_money)-float(tax),'.2f')
-		str_out = str(key)+','+str(value)+','+str(insurence_money)+','+str(tax)+','+str(backmoney)+'\n'
-		dumptofile(outfile,str_out)
+		str_out = str_out+str(key)+','+str(value)+','+str(insurence_money)+','+str(tax)+','+str(backmoney)+'\n'
+		queue3.put(str_out)
 
 def insurence(money,config):
 	m = money*float(config['YangLao'])+money*float(config['YiLiao'])+money*float(config['ShiYe'])+money*float(config['GongJiJin'])
@@ -84,12 +88,15 @@ def getTax(m):
 	else:
 		return m*0.45-13505
 	
-args = sys.argv[1:]
+opts,args = getopt.getopt()
 index_config = args.index('-c')
 index_user = args.index('-d')
 index_out = args.index('-o')
-config = Config(args[index_config+1]).config
-user = UserData(args[index_user+1]).user
-result = calculator(config,user,args[index_out+1])
+p1 = Process(target=_read_user,args=(args[index_user+1],args[index_config+1]))
+p2 = Process(target=calculator)
+p3 = Process(target=dumptofile,args=(args[index_out+1],))
+#config = Config(args[index_config+1]).config
+#user = UserData(args[index_user+1]).user
+#result = calculator(config,user,args[index_out+1])
 
 
