@@ -4,7 +4,7 @@
 
 {% block content %}
 	{% for title in titles %}
-	<p id="news_title">{{title}}</p>
+	<a href="/file/{{title.id}}">{{title.title}}</p>
 	{% endfor %}
 
 {% endblock %}
